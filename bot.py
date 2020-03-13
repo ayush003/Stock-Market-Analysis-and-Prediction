@@ -58,6 +58,7 @@ def ma(arr,win):
 	return net_profit_i,0,(1 if moving_i[-1]>moving_4i[-1] else -1)
 
 def snr(arr,win):
+	if len(arr['Close'])<4 : return float('-inf'),0	
 	from findiff import FinDiff #pip3 install findiff
 	dx = 1 #1 day interval
 	d_dx = FinDiff(0, dx, 1)
