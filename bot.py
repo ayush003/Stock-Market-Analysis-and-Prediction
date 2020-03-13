@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import sys
+import candle
 
 start = time.time()
 
@@ -37,8 +38,6 @@ def ma(arr,win):
 	            net_profit_i+=sell_i-close_i[j]
 	            buy_i = close_i[j]
 
-    print("Net_Profit for ",win,"-",4*win,"Moving Average = ",net_profit_i)
-    
     num_true = 0
     num_false = 0
     if len(zero_crossings_i)>0:
@@ -54,7 +53,9 @@ def ma(arr,win):
 	            else:
 	                num_false+=1
 
-	    print('Accuracy = ',(num_true/(num_true+num_false))*100,'%')
+		# return net_profit_i, ((num_true/(num_true+num_false))*100)
+	#returning the net profit, accuracy and the buy/sell decision
+    return net_profit_i,0,(1 if moving_i[-1]>moving_4i[-1] else 0)
 
 def snr(arr,win):
 	from findiff import FinDiff #pip3 install findiff
@@ -90,6 +91,7 @@ def snr(arr,win):
 
 	resistance_plot_array = []
 	support_plot_array = []
+	buy_dec = -1	#1 for buy, 0 for sell, -1 for hold
 
 	for end_index in range(win,len(clarr)):
 		price_max = clarr[end_index-win:end_index].max()
@@ -107,7 +109,7 @@ def snr(arr,win):
 		  num_points = 0
 		  for y in maximaIdxs:
 		    if y<end_index-win:
-		      continue
+		      continue			
 		    if y>=end_index:
 		      break
 		    if (clarr[x] >= clarr[y]) and (clarr[x] - clarr[y])<=delta_5:
@@ -148,27 +150,30 @@ def snr(arr,win):
 
 		if first:
 		    if (resist and (x>=resistance_price or resistance_price - x <= delta_5)) :
+		        trade_dec = 0
 		        sell_price = x
 		        buy = False
 		        first = False
 		    if not resist and (x<=support_price or x-support_price <= delta_5):
+		        trade_dec = 1
 		        buy = True
 		        buy_price = x
 		        first = False
 		    continue
 		    
 		if buy and resist and (x>=resistance_price or resistance_price - x <= delta_5):
+		    trade_dec = 0
 		    profit += x - buy_price
 		    buy = False
 		    sell_price = x
 		    
 		if not buy and not resist and (x<=support_price or x-support_price <= delta_5):
+		    trade_dec = 1
 		    profit += sell_price - x 
 		    buy = True
 		    buy_price = x
 	      
-	print("Net Profit = ",profit,"Window=",win)
-
+	return profit,trade_dec
 
 def bollinger(arr,win):
 	mean_i = arr['Close'].rolling(win).mean()
@@ -182,30 +187,35 @@ def bollinger(arr,win):
 
 	buy = True
 	first = True
+	trade_dec = -1	#1 for buy, 0 for sell, -1 for hold
 
 	for index,x in enumerate(arr['Close'][20:]):
 	    if first and x>upper_band[index-1]:
 	        first = False
+	        trade_dec = 0
 	        sell_price = x
 	        buy = True
 	        continue
 
 	    if first and x<lower_band[index-1]:
-	        first = False
-	        buy_price = x
-	        buy = False
-	        continue
+	    	trade_dec = 1
+	    	first = False
+	    	buy_price = x
+	    	buy = False
+	    	continue
 
 	    if not buy and x>upper_band[index-1]:
-	        profit += x-buy_price
-	        sell_price = x
-	        buy = True
+	    	trade_dec = 0
+	    	profit += x-buy_price
+	    	sell_price = x
+	    	buy = True
 	    elif buy and x<lower_band[index-1]:
-	        profit += sell_price-x
-	        buy_price = x
-	        buy = False
+	    	trade_dec = 1
+	    	profit += sell_price-x
+	    	buy_price = x
+	    	buy = False
 	    
-	print("Net profit = ",profit," for a window of ",win)
+	return profit,trade_dec
 
 if len(sys.argv) < 2:
 	print("Usage: python3 bot.py <csv_filename>")
@@ -217,17 +227,56 @@ print(data.shape)
 window = [1,5,10,20,50,100,200]
 
 print("Moving Average:")
+max_profit_win_ma = -1
+max_prof_ma = -1000000000
 for i in window:
-	ma(data,i)
+	temp,_,_ = ma(data,i)
+	if temp>max_prof_ma:
+		max_profit_win_ma = i
+		max_prof_ma = temp
+print("Profit = ",max_prof_ma," Window = ",max_profit_win_ma)
 
 print()
 print("Bollinger Bands:")
+max_profit_win_bol = -1
+max_prof_bol = -1000000000
 for i in window:
-	bollinger(data,i)
+	temp,_ = bollinger(data,i)
+	if temp>max_prof_bol:
+		max_profit_win_bol = i
+		max_prof_bol = temp
+print("Profit = ",max_prof_bol," Window = ",max_profit_win_bol)
+print()
+
+print("Support and Resistance:")
+max_profit_win_snr = -1
+max_prof_snr = -1000000000
+for i in window:
+	temp,_ = snr(data,i)
+	if temp>max_prof_snr:
+		max_profit_win_snr = i
+		max_prof_snr = temp
+print("Profit = ",max_prof_snr," Window = ",max_profit_win_snr)
+
+pred_final = np.array([])
+_,_,temp = ma(data,max_profit_win_ma)
+pred_final.append(temp)
+
+_,temp = bollinger(data,max_profit_win_bol)
+pred_final.append(temp)
+
+_,temp = snr(data,max_profit_win_snr)
+pred_final.append(temp)
+
+_,temp = candle.candle_pred(data)
+pred_final.append(temp)
 
 print()
-print("Support and Resistance:")
-for i in window:
-	snr(data,i)
+if(pred_final[-1]==-1):
+	print("No pattern")
+else:
+	print("Latest pattern shows ",("Bullish" if pred_final[-1]==1 else "Bearish")," trend.")
+
+print(pred_final)
 
 print(time.time()-start)
