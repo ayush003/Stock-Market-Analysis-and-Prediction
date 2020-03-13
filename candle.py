@@ -173,7 +173,7 @@ def candle_pred(data):
 	res_index = np.argmax(result_array)
 	
 	if result_array.sum() == -6:
-		return -1
+		return 0
 
-	return (0 if (res_index&1) else 1)
+	return (-1 if (res_index&1) else 1)
 

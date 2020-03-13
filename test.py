@@ -1,7 +1,14 @@
-plt.figure(figsize=(20,10))
-house_data['Close'].plot(color='black')
-moving_10 = house_data['Close'].rolling(10).mean()
-moving_10 .plot(color='b')
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import bot
+import sys
 
-moving_40 = house_data['Close'].rolling(40).mean()
-moving_40.plot(color='orange')
+if len(sys.argv) < 2:
+	print("Usage: python3 bot.py <csv_filename>")
+	exit()
+
+data = pd.read_csv(str(sys.argv[1]),index_col=0)
+print(data.shape)
+
+print(bot.predict(data))
