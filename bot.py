@@ -55,6 +55,7 @@ def ma(arr,win):
 
 		# return net_profit_i, ((num_true/(num_true+num_false))*100)
 	#returning the net profit, accuracy and the buy = 1 /sell = 0 decision
+	# return net_profit_i,0,((1 if moving_i[-1]>moving_4i[-1] else -1) if len(arr['Close']) in zero_crossings_i else 0)
 	return net_profit_i,0,(1 if moving_i[-1]>moving_4i[-1] else -1)
 
 def snr(arr,win):
@@ -219,7 +220,7 @@ def bollinger(arr,win):
 	return profit,trade_dec
 
 def predict(data):
-	window = [1,5,10,20,50,100,200]
+	window = [1,5,10,20,50,100]
 
 	print("Moving Average:")
 	max_profit_win_ma = -1
@@ -275,16 +276,14 @@ def predict(data):
 		print("Latest pattern shows ",("Bullish" if pred_final[-1]==1 else "Bearish")," trend.")
 
 	print(pred_final)
-
+	# return pred_final[1]
 	max_weightage_algo_index = np.argmax([max_prof_ma,max_prof_bol,max_prof_snr])
-
-	if pred_final[max_weightage_algo_index] == 0:
-		return 0
-
+	min_weightage_algo_index = np.argmin([max_prof_ma,max_prof_bol,max_prof_snr])
+	
 	return_pred = sum(pred_final)
 	if return_pred > 0:
 		return 1
 	elif return_pred < 0:
 		return -1
 	else:
-		return pred_final[max_weightage_algo_index]
+		return 0
