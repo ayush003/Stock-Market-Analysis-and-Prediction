@@ -14,7 +14,7 @@ if len(sys.argv) < 2:
 
 data = pd.read_csv(str(sys.argv[1]),index_col=0)
 print(data.shape)
-# data = data[:300]
+# data = data1ta[:300]
 
 moving_10_large = data['Close'].rolling(10).mean()
 mom_large = np.gradient(moving_10_large)

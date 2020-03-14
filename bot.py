@@ -276,10 +276,10 @@ def predict(data):
 		print("Latest pattern shows ",("Bullish" if pred_final[-1]==1 else "Bearish")," trend.")
 
 	print(pred_final)
-	# return pred_final[1]
-	max_weightage_algo_index = np.argmax([max_prof_ma,max_prof_bol,max_prof_snr])
-	min_weightage_algo_index = np.argmin([max_prof_ma,max_prof_bol,max_prof_snr])
-	
+	pred_final[0]/=10
+	pred_final[1]*=0.3
+	pred_final[2]*=0.2
+	pred_final[3]*=0.4
 	return_pred = sum(pred_final)
 	if return_pred > 0:
 		return 1
