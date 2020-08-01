@@ -8,8 +8,8 @@ import time
 
 start = time.time()
 if len(sys.argv) < 2:
-	print("Usage: python3 bot.py <csv_filename>")
-	exit()
+	print("Usage: python3 test.py <csv_filename>")
+	exit(1)
 
 data = pd.read_csv(str(sys.argv[1]),index_col=0)
 print(data.shape)
